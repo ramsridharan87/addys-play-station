@@ -4,6 +4,7 @@ const KEYS = {
   sessions: 'addy_sessions',
   results:  'addy_results',
   m1level:  'addy_m1_level',
+  m2level:  'addy_m2_level',
 }
 
 // ─── Generic helpers ─────────────────────────────────────────────────────────
@@ -81,6 +82,15 @@ export function getM1Level() {
 
 export function saveM1Level(level) {
   write(KEYS.m1level, Math.min(5, Math.max(1, level)))
+}
+
+// ─── Module 2 difficulty level ────────────────────────────────────────────────
+export function getM2Level() {
+  return read(KEYS.m2level, null) // null means "use first-session rule" (start at 1)
+}
+
+export function saveM2Level(level) {
+  write(KEYS.m2level, Math.min(3, Math.max(1, level)))
 }
 
 // ─── Streak calculation ───────────────────────────────────────────────────────

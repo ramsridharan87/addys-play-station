@@ -7,6 +7,7 @@ import {
 import { pickQuestions } from '../data/m1questions'
 import Mascot from '../components/Mascot'
 import NumberPad from '../components/NumberPad'
+import ActivityM2 from './ActivityM2'
 
 const TOTAL = 10
 
@@ -173,6 +174,8 @@ export default function Activity() {
   }
 
   // ── Render guards ─────────────────────────────────────────────────────────────
+  if (moduleId === '2') return <ActivityM2 />
+
   if (moduleId !== '1') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-blue-50">

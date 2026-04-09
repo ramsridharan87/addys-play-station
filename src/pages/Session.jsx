@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getOrCreateTodaySession, getTodaySession } from '../lib/storage'
+import { getOrCreateTodaySession } from '../lib/storage'
 
 const MODULES = [
   {
@@ -8,43 +8,52 @@ const MODULES = [
     name: 'Math Warm-Up',
     emoji: '🔢',
     description: 'Addition & subtraction with cars!',
-    unlocked: true,
   },
   {
     id: 2,
     name: 'Word Work',
     emoji: '📖',
     description: 'Spelling and reading fun.',
-    unlocked: false,
   },
   {
     id: 3,
     name: 'Challenge Math',
     emoji: '🧠',
     description: 'Tricky maths for champions.',
-    unlocked: false,
   },
   {
     id: 4,
     name: 'Puzzle Time',
     emoji: '🧩',
     description: 'Logic puzzles and brain teasers.',
-    unlocked: false,
   },
 ]
+
+/**
+ * Unlock rules:
+ *   Module 1 — always available
+ *   Module 2 — unlocks after Module 1 is complete in today's session
+ *   Modules 3 & 4 — locked until their content is built
+ */
+function isUnlocked(moduleId, completedIds) {
+  if (moduleId === 1) return true
+  if (moduleId === 2) return completedIds.includes(1)
+  return false
+}
 
 export default function Session() {
   const navigate = useNavigate()
   const [session, setSession] = useState(null)
 
   useEffect(() => {
-    const s = getOrCreateTodaySession()
-    setSession(s)
+    setSession(getOrCreateTodaySession())
   }, [])
 
+  const completed = session?.modulesCompleted ?? []
+
   function statusFor(mod) {
-    if (!mod.unlocked) return 'locked'
-    if (session?.modulesCompleted?.includes(mod.id)) return 'complete'
+    if (!isUnlocked(mod.id, completed)) return 'locked'
+    if (completed.includes(mod.id)) return 'complete'
     return 'available'
   }
 
@@ -65,7 +74,7 @@ export default function Session() {
         <h1 className="flex-1 text-2xl font-extrabold text-white text-center">
           Today's Session
         </h1>
-        <div style={{ width: '64px' }} /> {/* balance back button */}
+        <div style={{ width: '64px' }} />
       </div>
 
       {/* Module cards */}
