@@ -315,6 +315,29 @@ function spreadByContext(pool) {
 }
 
 /**
+ * Pick a single question appropriate for `level`.
+ * Excludes already-used IDs and prefers a different context than the last one.
+ * Falls back to adjacent levels if the target level is exhausted.
+ */
+export function pickOneQuestion(level, excludeIds = [], excludeContext = null) {
+  function candidatesAt(lvl) {
+    return questions.filter(q => q.level === lvl && !excludeIds.includes(q.id))
+  }
+
+  let pool = candidatesAt(level)
+  for (let delta = 1; pool.length === 0 && delta <= 4; delta++) {
+    pool = [...candidatesAt(level + delta), ...candidatesAt(level - delta)]
+  }
+
+  // Prefer a different context to avoid back-to-back repeats
+  const preferred = pool.filter(q => q.context !== excludeContext)
+  const candidates = preferred.length > 0 ? preferred : pool
+
+  if (candidates.length === 0) return null
+  return candidates[Math.floor(Math.random() * candidates.length)]
+}
+
+/**
  * Pick `count` questions appropriate for `level`.
  * Falls back to adjacent levels if the exact level doesn't have enough.
  * Guarantees no two consecutive questions share a context.

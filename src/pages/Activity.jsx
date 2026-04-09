@@ -4,7 +4,7 @@ import {
   getM1Level, saveM1Level,
   getTodaySession, markModuleComplete, appendResults,
 } from '../lib/storage'
-import { pickQuestions } from '../data/m1questions'
+import { pickOneQuestion } from '../data/m1questions'
 import Mascot from '../components/Mascot'
 import NumberPad from '../components/NumberPad'
 import ActivityM2 from './ActivityM2'
@@ -36,9 +36,11 @@ export default function Activity() {
   const attemptRef       = useRef(1)     // 1 = first attempt, 2 = second attempt
   const inputRef         = useRef('')    // mirrors input state — always current in handlers
   const isAdvancing      = useRef(false) // true during the 1-s pause; blocks double-submit
+  const usedIdsRef       = useRef([])    // IDs already served this session
+  const lastContextRef   = useRef(null)  // context of last question (avoids back-to-back)
 
   // ── State (rendering only) ───────────────────────────────────────────────────
-  const [questions, setQuestions]       = useState([])
+  const [currentQ, setCurrentQ]         = useState(null)
   const [qIndex, setQIndex]             = useState(0)
   const [input, setInput]               = useState('')
   const [padDisabled, setPadDisabled]   = useState(false) // re-renders pad after isAdvancing changes
@@ -49,11 +51,16 @@ export default function Activity() {
   useEffect(() => {
     sessionRef.current = getTodaySession()
     const saved = getM1Level()
-    levelRef.current = saved === null ? 1 : saved   // null = first ever session → start at 1
-    setQuestions(pickQuestions(levelRef.current, TOTAL))
+    // Bug 1: cap starting level at 2 so a stale high level doesn't dominate a fresh session
+    levelRef.current = saved === null ? 1 : Math.min(2, saved)
+    const first = pickOneQuestion(levelRef.current, [], null)
+    if (first) {
+      usedIdsRef.current    = [first.id]
+      lastContextRef.current = first.context
+    }
+    console.log(`[M1] Question 1 — level: ${levelRef.current}`)
+    setCurrentQ(first)
   }, [])
-
-  const currentQ = questions[qIndex]
 
   // Keep inputRef in sync so handlers always read the latest value
   function updateInput(val) {
@@ -118,10 +125,12 @@ export default function Activity() {
     if (correctStreakRef.current >= 3) {
       levelRef.current = Math.min(5, levelRef.current + 1)
       correctStreakRef.current = 0
+      saveM1Level(levelRef.current)   // Bug 2: persist immediately on level-up
     }
     if (wrongStreakRef.current >= 2) {
       levelRef.current = Math.max(1, levelRef.current - 1)
       wrongStreakRef.current = 0
+      saveM1Level(levelRef.current)   // Bug 2: persist immediately on level-down
     }
   }
 
@@ -148,11 +157,20 @@ export default function Activity() {
     if (qIndexRef.current >= TOTAL) {
       finishModule()
     } else {
+      // Pick next question lazily at the current (possibly adjusted) level
+      const next = pickOneQuestion(levelRef.current, usedIdsRef.current, lastContextRef.current)
+      if (next) {
+        usedIdsRef.current    = [...usedIdsRef.current, next.id]
+        lastContextRef.current = next.context
+      }
+      console.log(`[M1] Question ${qIndexRef.current + 1} — level: ${levelRef.current}`)
+
       // Reset everything for the next question
       attemptRef.current  = 1
       isAdvancing.current = false
 
       setQIndex(qIndexRef.current)
+      setCurrentQ(next)
       updateInput('')
       setPadDisabled(false)
       setMascotMood('idle')
@@ -184,7 +202,7 @@ export default function Activity() {
     )
   }
 
-  if (questions.length === 0) return null
+  if (!currentQ) return null
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-500 to-blue-700

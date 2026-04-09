@@ -205,7 +205,6 @@ export default function ActivityM2() {
         {currentQ?.type === 'A' ? (
           <>
             <span className="text-7xl leading-none">{currentQ.emoji}</span>
-            <p className="text-2xl font-extrabold text-blue-900">{currentQ.word}</p>
             <p className="text-sm text-blue-400 font-semibold">Choose the correct spelling</p>
           </>
         ) : (
