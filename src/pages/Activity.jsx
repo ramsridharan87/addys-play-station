@@ -8,6 +8,7 @@ import { pickOneQuestion } from '../data/m1questions'
 import Mascot from '../components/Mascot'
 import NumberPad from '../components/NumberPad'
 import ActivityM2 from './ActivityM2'
+import ActivityM3 from './ActivityM3'
 
 const TOTAL = 10
 
@@ -193,6 +194,7 @@ export default function Activity() {
 
   // ── Render guards ─────────────────────────────────────────────────────────────
   if (moduleId === '2') return <ActivityM2 />
+  if (moduleId === '3') return <ActivityM3 />
 
   if (moduleId !== '1') {
     return (

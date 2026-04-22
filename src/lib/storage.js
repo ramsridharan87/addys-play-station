@@ -5,6 +5,8 @@ const KEYS = {
   results:  'addy_results',
   m1level:  'addy_m1_level',
   m2level:  'addy_m2_level',
+  m3level:  'addy_m3_level',
+  m3phase:  'addy_m3_phase',
 }
 
 // ─── Generic helpers ─────────────────────────────────────────────────────────
@@ -91,6 +93,24 @@ export function getM2Level() {
 
 export function saveM2Level(level) {
   write(KEYS.m2level, Math.min(3, Math.max(1, level)))
+}
+
+// ─── Module 3 difficulty level ────────────────────────────────────────────────
+export function getM3Level() {
+  return read(KEYS.m3level, null) // null means first session → start at 1
+}
+
+export function saveM3Level(level) {
+  write(KEYS.m3level, Math.min(3, Math.max(1, level)))
+}
+
+// ─── Module 3 phase ───────────────────────────────────────────────────────────
+export function getM3Phase() {
+  return read(KEYS.m3phase, 1) // default phase 1
+}
+
+export function saveM3Phase(phase) {
+  write(KEYS.m3phase, Math.min(2, Math.max(1, phase)))
 }
 
 // ─── Streak calculation ───────────────────────────────────────────────────────
