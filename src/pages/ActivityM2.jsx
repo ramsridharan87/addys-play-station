@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getM2Level, saveM2Level,
-  getTodaySession, markModuleComplete, appendResults,
+  getOrCreateTodaySession, markModuleComplete, appendResults,
 } from '../lib/storage'
 import { pickQuestions } from '../data/m2questions'
 import Mascot from '../components/Mascot'
@@ -61,7 +61,7 @@ export default function ActivityM2() {
 
   // ── Init ──────────────────────────────────────────────────────────────────
   useEffect(() => {
-    sessionRef.current = getTodaySession()
+    sessionRef.current = getOrCreateTodaySession()   // ensures session always exists
     const saved = getM2Level()
     levelRef.current = saved === null ? 1 : saved
     setQuestions(pickQuestions(levelRef.current))
@@ -83,8 +83,9 @@ export default function ActivityM2() {
       setMascotMsg(randomFrom(CORRECT_MSGS))
       beginAdvance()
     } else if (attemptRef.current === 1) {
-      // ── First wrong — amber highlight, retry ───────────────────────────
+      // ── First wrong — reset correct streak, amber highlight, retry ─────
       attemptRef.current = 2
+      correctStreakRef.current = 0   // a wrong answer breaks any correct run
       setSelectedWrong(option)
       setMascotMood('thinking')
       setMascotMsg(randomFrom(RETRY_MSGS))
@@ -113,10 +114,12 @@ export default function ActivityM2() {
     if (correctStreakRef.current >= 3) {
       levelRef.current = Math.min(3, levelRef.current + 1)
       correctStreakRef.current = 0
+      saveM2Level(levelRef.current)   // persist immediately on level change
     }
     if (wrongStreakRef.current >= 2) {
       levelRef.current = Math.max(1, levelRef.current - 1)
       wrongStreakRef.current = 0
+      saveM2Level(levelRef.current)   // persist immediately on level change
     }
   }
 
@@ -204,6 +207,7 @@ export default function ActivityM2() {
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-6 flex flex-col items-center gap-3">
         {currentQ?.type === 'A' ? (
           <>
+            {/* Intentionally NO word label — showing the word gives away the answer */}
             <span className="text-7xl leading-none">{currentQ.emoji}</span>
             <p className="text-sm text-blue-400 font-semibold">Choose the correct spelling</p>
           </>
