@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   getM1Level, saveM1Level,
-  getTodaySession, markModuleComplete, appendResults,
+  getOrCreateTodaySession, markModuleComplete, appendResults,
 } from '../lib/storage'
 import { pickOneQuestion } from '../data/m1questions'
 import Mascot from '../components/Mascot'
@@ -50,16 +50,19 @@ export default function Activity() {
 
   // ── Init ─────────────────────────────────────────────────────────────────────
   useEffect(() => {
-    sessionRef.current = getTodaySession()
+    sessionRef.current = getOrCreateTodaySession()   // ensures session always exists
     const saved = getM1Level()
-    // Bug 1: cap starting level at 2 so a stale high level doesn't dominate a fresh session
+    // Cap starting level at 2: stale high level never dominates a fresh session
     levelRef.current = saved === null ? 1 : Math.min(2, saved)
     const first = pickOneQuestion(levelRef.current, [], null)
     if (first) {
       usedIdsRef.current    = [first.id]
       lastContextRef.current = first.context
     }
-    console.log(`[M1] Question 1 — level: ${levelRef.current}`)
+    console.log(
+      `[M1] Question 1 — level: ${levelRef.current} | ` +
+      `correctStreak: ${correctStreakRef.current} | wrongStreak: ${wrongStreakRef.current}`
+    )
     setCurrentQ(first)
   }, [])
 
@@ -87,8 +90,9 @@ export default function Activity() {
         setMascotMsg(randomFrom(CORRECT_MSGS))
         beginAdvance(1000)
       } else {
-        // Wrong on attempt 1 — clear input, show retry, keep pad enabled
+        // Wrong on attempt 1 — reset correct streak, clear input, show retry
         attemptRef.current = 2
+        correctStreakRef.current = 0   // a wrong answer breaks any correct run
         updateInput('')
         setMascotMood('thinking')
         setMascotMsg(`So close! Try once more, Addy! 💪`)
@@ -164,7 +168,10 @@ export default function Activity() {
         usedIdsRef.current    = [...usedIdsRef.current, next.id]
         lastContextRef.current = next.context
       }
-      console.log(`[M1] Question ${qIndexRef.current + 1} — level: ${levelRef.current}`)
+      console.log(
+        `[M1] Question ${qIndexRef.current + 1} — level: ${levelRef.current} | ` +
+        `correctStreak: ${correctStreakRef.current} | wrongStreak: ${wrongStreakRef.current}`
+      )
 
       // Reset everything for the next question
       attemptRef.current  = 1

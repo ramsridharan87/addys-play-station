@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   getM3Level, saveM3Level,
-  getTodaySession, markModuleComplete, appendResults,
+  getOrCreateTodaySession, markModuleComplete, appendResults,
 } from '../lib/storage'
 import { pickOneM3Question } from '../data/m3questions'
 import Mascot from '../components/Mascot'
@@ -153,13 +153,16 @@ export default function ActivityM3() {
 
   // ── Init ───────────────────────────────────────────────────────────────────
   useEffect(() => {
-    sessionRef.current = getTodaySession()
+    sessionRef.current = getOrCreateTodaySession()   // ensures session always exists
     const saved = getM3Level()
-    // Cap starting level at 2 — same fix applied to Module 1
+    // Cap starting level at 2: stale high level never dominates a fresh session
     levelRef.current = saved === null ? 1 : Math.min(2, saved)
     const first = pickOneM3Question(levelRef.current, [])
     if (first) usedIdsRef.current = [first.id]
-    console.log(`[M3] Question 1 — level: ${levelRef.current}`)
+    console.log(
+      `[M3] Question 1 — level: ${levelRef.current} | ` +
+      `correctStreak: ${correctStreakRef.current} | wrongStreak: ${wrongStreakRef.current}`
+    )
     setCurrentQ(first)
   }, [])
 
@@ -186,8 +189,9 @@ export default function ActivityM3() {
         setMascotMsg(randomFrom(CORRECT_MSGS))
         beginAdvance(1000)
       } else {
-        // Wrong on attempt 1 — clear, show retry
+        // Wrong on attempt 1 — reset correct streak, clear, show retry
         attemptRef.current = 2
+        correctStreakRef.current = 0   // a wrong answer breaks any correct run
         updateInput('')
         setMascotMood('thinking')
         setMascotMsg('Not quite! The hint might help 💪')
@@ -258,7 +262,10 @@ export default function ActivityM3() {
     } else {
       const next = pickOneM3Question(levelRef.current, usedIdsRef.current)
       if (next) usedIdsRef.current = [...usedIdsRef.current, next.id]
-      console.log(`[M3] Question ${qIndexRef.current + 1} — level: ${levelRef.current}`)
+      console.log(
+        `[M3] Question ${qIndexRef.current + 1} — level: ${levelRef.current} | ` +
+        `correctStreak: ${correctStreakRef.current} | wrongStreak: ${wrongStreakRef.current}`
+      )
 
       attemptRef.current  = 1
       isAdvancing.current = false
