@@ -33,11 +33,13 @@ const MODULES = [
  * Unlock rules:
  *   Module 1 — always available
  *   Module 2 — unlocks after Module 1 is complete in today's session
- *   Modules 3 & 4 — locked until their content is built
+ *   Module 3 — unlocks after Module 2 is complete in today's session
+ *   Module 4 — locked until its content is built
  */
 function isUnlocked(moduleId, completedIds) {
   if (moduleId === 1) return true
   if (moduleId === 2) return completedIds.includes(1)
+  if (moduleId === 3) return completedIds.includes(2)
   return false
 }
 
